@@ -1,0 +1,4 @@
+dist/
+cmd/make-it-green-gui/build/*
+!cmd/make-it-green-gui/build/appicon.png
+cmd/make-it-green-gui/frontend/wailsjs/

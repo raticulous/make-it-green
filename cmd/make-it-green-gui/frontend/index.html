@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Make It Green</title>
+<style>
+  :root {
+    --bg: #f4f6f3;
+    --surface: #ffffff;
+    --line: #e2e6df;
+    --text: #141815;
+    --muted: #616a62;
+    --green: #3f9a1d;
+    --green-soft: rgba(63, 154, 29, .14);
+    --amber: #c27a00;
+    --amber-soft: rgba(194, 122, 0, .14);
+    --grey: #8b938c;
+    --grey-soft: rgba(139, 147, 140, .16);
+    --danger: #c43c31;
+    --on-accent: #ffffff;
+    --shadow: 0 1px 2px rgba(20, 24, 21, .06), 0 8px 24px rgba(20, 24, 21, .06);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1110;
+      --surface: #181b19;
+      --line: #262b27;
+      --text: #ecefeb;
+      --muted: #9aa39b;
+      --green: #6cc644;
+      --green-soft: rgba(108, 198, 68, .16);
+      --amber: #f2a93b;
+      --amber-soft: rgba(242, 169, 59, .16);
+      --grey: #6d756e;
+      --grey-soft: rgba(109, 117, 110, .2);
+      --danger: #ff7b6e;
+      --on-accent: #0f1110;
+      --shadow: none;
+      color-scheme: dark;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  main { max-width: 440px; margin: 0 auto; padding: 16px 16px 20px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* --- presence hero --- */
+  .hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding-top: 4px; }
+  .orb {
+    --c: var(--grey); --soft: var(--grey-soft);
+    position: relative; width: 96px; height: 96px; border-radius: 50%;
+    background: var(--soft); display: grid; place-items: center;
+    transition: background .4s;
+  }
+  .orb::before {
+    content: ""; width: 48px; height: 48px; border-radius: 50%;
+    background: var(--c); transition: background .4s, transform .4s;
+    box-shadow: 0 0 0 6px var(--bg);
+  }
+  .orb svg { position: absolute; width: 28px; height: 28px; color: var(--on-accent); opacity: 0; transition: opacity .3s; }
+  .orb::after {
+    content: ""; position: absolute; inset: 0; border-radius: 50%;
+    border: 2px solid var(--c); opacity: 0;
+  }
+  [data-state="active"] .orb { --c: var(--green); --soft: var(--green-soft); }
+  [data-state="active"] .orb svg { opacity: 1; }
+  [data-state="active"] .orb::after { animation: pulse 2.6s ease-out infinite; }
+  [data-state="paused"] .orb { --c: var(--amber); --soft: var(--amber-soft); }
+  @keyframes pulse { from { transform: scale(.55); opacity: .7; } to { transform: scale(1.25); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .orb::after { animation: none !important; } }
+
+  h1 { font-size: 22px; font-weight: 650; letter-spacing: -.01em; }
+  .sub { color: var(--muted); font-variant-numeric: tabular-nums; min-height: 1.45em; }
+
+  .primary {
+    appearance: none; border: 0; cursor: pointer; width: 100%;
+    height: 44px; border-radius: 999px; font: inherit; font-weight: 600; font-size: 15px;
+    background: var(--green); color: var(--on-accent);
+    transition: filter .15s, background .3s, color .3s;
+  }
+  .primary:hover { filter: brightness(1.06); }
+  .primary:active { filter: brightness(.95); }
+  [data-state="active"] .primary, [data-state="paused"] .primary {
+    background: transparent; color: var(--text); box-shadow: inset 0 0 0 1.5px var(--line);
+  }
+
+  /* --- settings --- */
+  section { display: flex; flex-direction: column; gap: 8px; }
+  h2 { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 0 4px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+  .row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 10px 14px; min-height: 46px;
+  }
+  .row + .row { border-top: 1px solid var(--line); }
+  .row .label { display: flex; flex-direction: column; gap: 2px; }
+  .hint { color: var(--muted); font-size: 12.5px; line-height: 1.4; }
+  .badge {
+    display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px;
+    font-size: 10.5px; font-weight: 600; letter-spacing: .03em; vertical-align: 1px;
+    color: var(--amber); background: var(--amber-soft);
+  }
+  .dim { opacity: .45; pointer-events: none; transition: opacity .2s; }
+
+  /* switch */
+  .switch { position: relative; flex: none; width: 40px; height: 24px; }
+  .switch input { appearance: none; margin: 0; width: 100%; height: 100%; border-radius: 999px; background: var(--grey-soft); box-shadow: inset 0 0 0 1px var(--line); cursor: pointer; transition: background .2s; }
+  .switch input:checked { background: var(--green); box-shadow: none; }
+  .switch span { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); pointer-events: none; transition: transform .2s; }
+  .switch input:checked + span { transform: translateX(16px); }
+
+  select, input[type="number"] {
+    font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line);
+    border-radius: 8px; height: 32px; padding: 0 8px; font-variant-numeric: tabular-nums;
+  }
+  input[type="number"] { width: 64px; text-align: right; }
+  .hours { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+
+  :focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+
+  .error { color: var(--danger); font-size: 12.5px; text-align: center; min-height: 1.4em; padding: 0 8px; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<main id="app" data-state="off">
+  <div class="hero">
+    <div class="orb" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+    </div>
+    <h1 id="title" aria-live="polite">Off</h1>
+    <p class="sub" id="sub">Your status goes Away when you are idle.</p>
+  </div>
+
+  <button class="primary" id="toggle">Keep me green</button>
+
+  <section>
+    <h2>Schedule</h2>
+    <div class="card">
+      <label class="row">
+        <span class="label">Only during work hours</span>
+        <span class="switch"><input type="checkbox" id="schedule"><span></span></span>
+      </label>
+      <div class="row" id="hoursRow">
+        <span class="label">Hours</span>
+        <span class="hours">
+          <select id="start" aria-label="Start hour"></select> –
+          <select id="end" aria-label="End hour"></select>
+        </span>
+      </div>
+      <label class="row" id="weekdaysRow">
+        <span class="label">Weekdays only</span>
+        <span class="switch"><input type="checkbox" id="weekdays"><span></span></span>
+      </label>
+    </div>
+  </section>
+
+  <section>
+    <h2>Behavior</h2>
+    <div class="card">
+      <label class="row">
+        <span class="label">Nudge every
+          <span class="hint">Chat apps go Away after about 5 to 10 minutes idle.</span>
+        </span>
+        <span class="hours"><input type="number" id="interval" min="5" max="240" step="5"> s</span>
+      </label>
+      <label class="row">
+        <span class="label"><span>Let the screen turn off<span class="badge">EXPERIMENTAL</span></span>
+          <span class="hint">The computer stays awake, the screen sleeps. Turn off "lock when screen turns off", or your status goes Away.</span>
+        </span>
+        <span class="switch"><input type="checkbox" id="screenOff"><span></span></span>
+      </label>
+      <label class="row">
+        <span class="label">Open at login
+          <span class="hint">Starts working right away.</span>
+        </span>
+        <span class="switch"><input type="checkbox" id="autostart"><span></span></span>
+      </label>
+    </div>
+  </section>
+
+  <p class="error" id="error" role="alert"></p>
+  <footer>The CLI <code>make-it-green</code> uses the same settings.</footer>
+</main>
+
+<script>
+  const App = () => window.go.main.App;
+  const $ = id => document.getElementById(id);
+  const pad = h => String(h).padStart(2, "0") + ":00";
+  let cfg, running = false, since = null, state = "off";
+
+  for (const sel of [$("start"), $("end")])
+    for (let h = 0; h <= 24; h++) sel.add(new Option(pad(h), h));
+
+  function showError(e) { $("error").textContent = e ? String(e) : ""; }
+
+  function readForm() {
+    return {
+      ...cfg,
+      schedule: $("schedule").checked,
+      start_hour: +$("start").value,
+      end_hour: +$("end").value,
+      weekdays_only: $("weekdays").checked,
+      interval_sec: Math.max(5, +$("interval").value || 50),
+      screen_off: $("screenOff").checked,
+    };
+  }
+
+  function fillForm() {
+    $("schedule").checked = cfg.schedule;
+    $("start").value = cfg.start_hour;
+    $("end").value = cfg.end_hour;
+    $("weekdays").checked = cfg.weekdays_only;
+    $("interval").value = cfg.interval_sec;
+    $("screenOff").checked = cfg.screen_off;
+    dimSchedule();
+  }
+
+  function dimSchedule() {
+    const off = !$("schedule").checked;
+    $("hoursRow").classList.toggle("dim", off);
+    $("weekdaysRow").classList.toggle("dim", off);
+  }
+
+  function duration(ms) {
+    const m = Math.floor(ms / 60000), h = Math.floor(m / 60);
+    return h ? `${h}h ${m % 60}m` : `${m}m`;
+  }
+
+  function render() {
+    $("app").dataset.state = state;
+    $("toggle").textContent = running ? "Stop" : "Keep me green";
+    if (state === "active") {
+      $("title").textContent = "You're green";
+      const extra = cfg.screen_off ? " · screen may turn off" : "";
+      $("sub").textContent = `Green for ${duration(Date.now() - since)}${extra}`;
+    } else if (state === "paused") {
+      $("title").textContent = "Paused";
+      $("sub").textContent = `Outside work hours · resumes at ${pad(cfg.start_hour)}`;
+    } else {
+      $("title").textContent = "Off";
+      $("sub").textContent = "Your status goes Away when you are idle.";
+    }
+  }
+
+  async function apply() {
+    cfg = readForm();
+    try {
+      showError("");
+      if (running) await App().Start(cfg); else await App().SaveConfig(cfg);
+    } catch (e) { showError(e); }
+    render();
+  }
+
+  $("toggle").addEventListener("click", async () => {
+    try {
+      showError("");
+      if (running) { await App().Stop(); running = false; }
+      else { cfg = readForm(); await App().Start(cfg); running = true; }
+    } catch (e) { showError(e); }
+    render();
+  });
+
+  for (const id of ["schedule", "start", "end", "weekdays", "interval", "screenOff"])
+    $(id).addEventListener("change", () => { dimSchedule(); apply(); });
+
+  $("autostart").addEventListener("change", async e => {
+    try { showError(""); await App().SetAutostart(e.target.checked); }
+    catch (err) { showError(err); e.target.checked = !e.target.checked; }
+  });
+
+  const short = s => s.startsWith("active") ? "active" : s.startsWith("paused") ? "paused" : "off";
+
+  window.runtime.EventsOn("state", (s, err) => {
+    if (err) { showError(err); return; }
+    const next = short(s);
+    if (next === "active" && state !== "active") since = Date.now();
+    state = next;
+    running = next !== "off";
+    render();
+  });
+
+  setInterval(() => state === "active" && render(), 30000);
+
+  (async () => {
+    try {
+      cfg = await App().GetConfig();
+      $("autostart").checked = await App().Autostart();
+      state = short(await App().State());
+      running = state !== "off";
+      since = Date.now();
+    } catch (e) { showError(e); cfg = cfg || {}; }
+    fillForm();
+    render();
+  })();
+</script>
+</body>
+</html>
