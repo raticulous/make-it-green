@@ -15,3 +15,5 @@ func (a *App) startTray() {
 		systray.Run(a.onTrayReady, nil)
 	}()
 }
+
+func showInDock() {}

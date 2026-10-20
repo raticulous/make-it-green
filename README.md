@@ -11,7 +11,7 @@ Both read and write the same settings file (`make-it-green status` prints its pa
 
 ## How it works
 
-- Every N seconds (default 50) it moves the mouse 1 px and back. Teams and Slack see activity (Teams goes Away after about 5 minutes idle, Slack after about 10).
+- Every N seconds (default 50, max 240) it moves the mouse 1 px and back. Teams and Slack see activity (Teams goes Away after about 5 minutes idle, Slack after about 10).
 - While active it holds an OS sleep lock: `SetThreadExecutionState` (Windows), `caffeinate` (macOS), `systemd-inhibit` (Linux).
 - Optional schedule: work hours and weekdays only.
 

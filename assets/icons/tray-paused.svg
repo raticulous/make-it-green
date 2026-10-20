@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <g transform="translate(32 32) scale(.8) translate(-32 -32)">
+    <path d="M5 59L1 63" stroke="#b8740a" stroke-width="5" stroke-linecap="round"/>
+    <path d="M5 59C5 15 15 5 59 5C59 49 49 59 5 59Z" fill="#e8a91f"/>
+    <!-- veins: a midrib from the stem to the tip and two pairs of side veins, so it reads as a leaf -->
+    <g fill="none" stroke="#a8640a" stroke-width="3.5" stroke-linecap="round">
+      <path d="M8 56Q30 36 52 12"/>
+      <path d="M22 42L17 28M22 42L36 46M35 28L33 15M35 28L49 30"/>
+    </g>
+  </g>
+</svg>

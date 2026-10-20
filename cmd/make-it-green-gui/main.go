@@ -12,6 +12,7 @@ import (
 	goruntime "runtime"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"fyne.io/systray"
 	"github.com/wailsapp/wails/v2"
@@ -31,10 +32,11 @@ var appIcon []byte
 
 // App methods are callable from JS as window.go.main.App.<Method>.
 type App struct {
-	ctx  context.Context
-	mu   sync.Mutex
-	stop context.CancelFunc
-	last string // last engine state, for a UI that loads after the engine started
+	ctx   context.Context
+	mu    sync.Mutex
+	stop  context.CancelFunc
+	last  string    // last engine state, for a UI that loads after the engine started
+	since time.Time // when the status last turned green
 
 	toggleItem atomic.Pointer[systray.MenuItem] // set once the tray is ready
 }
@@ -53,27 +55,46 @@ func (a *App) State() string {
 	return a.last
 }
 
-// Start saves c and runs the engine with it. It restarts a running engine.
+// GreenSince is when the status turned green, in Unix ms (0 when not green).
+func (a *App) GreenSince() int64 {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.stop == nil || a.since.IsZero() {
+		return 0
+	}
+	return a.since.UnixMilli()
+}
+
+// Start saves c and runs the engine with it. It restarts a running engine
+// and keeps the green time, so a settings change does not reset the counter.
 func (a *App) Start(c engine.Config) error {
 	if err := c.Save(); err != nil {
 		return err
 	}
-	a.Stop()
 	a.mu.Lock()
 	defer a.mu.Unlock()
+	if a.stop != nil {
+		a.stop()
+	}
 	ctx, cancel := context.WithCancel(a.ctx)
 	a.stop = cancel
 	go engine.Run(ctx, c, func(s engine.State, err error) {
 		msg := ""
+		a.mu.Lock()
 		if err != nil {
 			msg = err.Error()
 		} else {
-			a.mu.Lock()
+			if s == engine.Active && a.last != string(engine.Active) {
+				a.since = time.Now()
+			}
 			a.last = string(s)
-			a.mu.Unlock()
+		}
+		since := a.since.UnixMilli()
+		a.mu.Unlock()
+		if err == nil {
 			a.setTray(string(s))
 		}
-		runtime.EventsEmit(a.ctx, "state", string(s), msg)
+		runtime.EventsEmit(a.ctx, "state", string(s), msg, since)
 	})
 	return nil
 }
@@ -84,7 +105,8 @@ func (a *App) Stop() {
 	if a.stop != nil {
 		a.stop()
 		a.stop = nil
-		runtime.EventsEmit(a.ctx, "state", "off", "")
+		a.last = "off"
+		runtime.EventsEmit(a.ctx, "state", "off", "", 0)
 		a.setTray("off")
 	}
 }
@@ -132,10 +154,10 @@ func main() {
 	frontend, _ := fs.Sub(assets, "frontend")
 	err := wails.Run(&options.App{
 		Title:            "Make It Green",
-		Width:            400,
-		Height:           760,
+		Width:            780,
+		Height:           540,
 		MinWidth:         360,
-		MinHeight:        560,
+		MinHeight:        480,
 		AssetServer:      &assetserver.Options{Assets: frontend},
 		BackgroundColour: &options.RGBA{R: 15, G: 17, B: 16, A: 1},
 		// Closing the window hides it; the tray icon brings it back or quits.

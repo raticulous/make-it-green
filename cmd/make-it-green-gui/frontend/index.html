@@ -52,32 +52,56 @@
     user-select: none;
     -webkit-user-select: none;
   }
-  main { max-width: 440px; margin: 0 auto; padding: 16px 16px 20px; display: flex; flex-direction: column; gap: 16px; }
+  main {
+    max-width: 880px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: 300px 1fr; gap: 28px; align-items: start;
+  }
+  .side { display: flex; flex-direction: column; gap: 16px; }
+  .settings { display: flex; flex-direction: column; gap: 16px; }
+  @media (max-width: 640px) {
+    main { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
+  }
 
   /* --- presence hero --- */
   .hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding-top: 4px; }
   .orb {
     --c: var(--grey); --soft: var(--grey-soft);
-    position: relative; width: 96px; height: 96px; border-radius: 50%;
+    position: relative; width: 120px; height: 120px; border-radius: 50%;
     background: var(--soft); display: grid; place-items: center;
-    transition: background .4s;
+    transition: background .3s;
   }
   .orb::before {
-    content: ""; width: 48px; height: 48px; border-radius: 50%;
-    background: var(--c); transition: background .4s, transform .4s;
+    content: ""; width: 52px; height: 52px; border-radius: 50%;
+    background: var(--c); transition: background .3s, transform .25s;
     box-shadow: 0 0 0 6px var(--bg);
   }
-  .orb svg { position: absolute; width: 28px; height: 28px; color: var(--on-accent); opacity: 0; transition: opacity .3s; }
   .orb::after {
     content: ""; position: absolute; inset: 0; border-radius: 50%;
     border: 2px solid var(--c); opacity: 0;
   }
+  .orb svg { position: absolute; width: 76px; height: 76px; overflow: visible; }
+  .leaf { transform-origin: 5px 59px; transform: scale(0) rotate(-40deg); opacity: 0; transition: transform .2s ease-in, opacity .2s; }
+  .check { stroke-dasharray: 42; stroke-dashoffset: 42; transition: stroke-dashoffset .12s; }
   [data-state="active"] .orb { --c: var(--green); --soft: var(--green-soft); }
-  [data-state="active"] .orb svg { opacity: 1; }
-  [data-state="active"] .orb::after { animation: pulse 2.6s ease-out infinite; }
+  [data-state="active"] .orb::before, [data-state="paused"] .orb::before { transform: scale(.4); }
+  [data-state="active"] .orb::after { animation: pulse 2.6s ease-out .5s infinite; }
+  /* paused: a yellow leaf; turning on grows the green leaf over it */
+  [data-state="paused"] .autumn { transform: none; opacity: 1; transition: transform .38s cubic-bezier(.3, 1.6, .5, 1), opacity .1s; }
+  [data-state="active"] .autumn { transform: none; opacity: 0; transition: opacity 0s .4s; }
+  [data-state="active"] .green { transform: none; opacity: 1; transition: transform .38s cubic-bezier(.3, 1.6, .5, 1), opacity .1s; }
+  /* paused -> active: the green leaf sits exactly on the yellow one and fades in, so the yellow
+     leaf ripens to green in place and never peeks out; a small pop sells the change */
+  [data-state="paused"] .green { transform: none; opacity: 0; transition: opacity .2s; }
+  [data-state="active"][data-from="paused"] .green { transition: opacity .28s ease-out; }
+  [data-state="active"][data-from="paused"] .orb svg { animation: pop .4s cubic-bezier(.3, 1.6, .5, 1); }
+  @keyframes pop { 40% { transform: scale(1.12); } }
+  [data-state="active"] .check { stroke-dashoffset: 0; transition: stroke-dashoffset .22s cubic-bezier(.6, 0, .3, 1) .24s; }
   [data-state="paused"] .orb { --c: var(--amber); --soft: var(--amber-soft); }
   @keyframes pulse { from { transform: scale(.55); opacity: .7; } to { transform: scale(1.25); opacity: 0; } }
-  @media (prefers-reduced-motion: reduce) { .orb::after { animation: none !important; } }
+  @media (prefers-reduced-motion: reduce) {
+    .orb::after { animation: none !important; }
+    .orb *, .orb::before { transition: none !important; animation: none !important; }
+  }
 
   h1 { font-size: 22px; font-weight: 650; letter-spacing: -.01em; }
   .sub { color: var(--muted); font-variant-numeric: tabular-nums; min-height: 1.45em; }
@@ -123,27 +147,70 @@
     font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line);
     border-radius: 8px; height: 32px; padding: 0 8px; font-variant-numeric: tabular-nums;
   }
-  input[type="number"] { width: 64px; text-align: right; }
+  input[type="number"] { width: 64px; text-align: right; appearance: textfield; -moz-appearance: textfield; }
+  input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .stack { flex-direction: column; align-items: stretch; }
+  .stack > .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .presets button {
+    appearance: none; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    height: 28px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--bg); color: var(--muted); transition: background .15s, color .15s, border-color .15s;
+  }
+  .presets button:hover { color: var(--text); }
+  .presets button[aria-pressed="true"] { background: var(--green-soft); border-color: transparent; color: var(--green); }
   .hours { display: flex; align-items: center; gap: 6px; color: var(--muted); }
 
   :focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 
-  .error { color: var(--danger); font-size: 12.5px; text-align: center; min-height: 1.4em; padding: 0 8px; }
-  footer { text-align: center; color: var(--muted); font-size: 12px; }
+  .error { color: var(--danger); font-size: 12.5px; text-align: center; padding: 0 8px; }
+  .error:empty { display: none; }
 </style>
 </head>
 <body>
 <main id="app" data-state="off">
+  <div class="side">
   <div class="hero">
     <div class="orb" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+      <svg viewBox="0 0 64 64">
+        <defs>
+          <linearGradient id="leafFill" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stop-color="#2f8a12"/><stop offset="1" stop-color="#7fd94f"/>
+          </linearGradient>
+          <linearGradient id="leafAutumn" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stop-color="#b86e00"/><stop offset="1" stop-color="#f5c84a"/>
+          </linearGradient>
+          <!-- cuts the green leaf's veins away around the check, so they never cross it -->
+          <mask id="aroundCheck" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+            <rect width="64" height="64" fill="#fff"/>
+            <path d="M18 33L28 43L46 23" fill="none" stroke="#000" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+          </mask>
+        </defs>
+        <g class="leaf autumn">
+          <path d="M5 59L1 63" stroke="#b86e00" stroke-width="4" stroke-linecap="round"/>
+          <path d="M5 59C5 15 15 5 59 5C59 49 49 59 5 59Z" fill="url(#leafAutumn)"/>
+          <g fill="none" stroke="#a8640a" stroke-width="2.5" stroke-linecap="round" opacity=".8">
+            <path d="M8 56Q30 36 52 12"/>
+            <path d="M22 42L17 28M22 42L36 46M35 28L33 15M35 28L49 30"/>
+          </g>
+        </g>
+        <g class="leaf green">
+          <path d="M5 59L1 63" stroke="#3f9a1d" stroke-width="4" stroke-linecap="round"/>
+          <path d="M5 59C5 15 15 5 59 5C59 49 49 59 5 59Z" fill="url(#leafFill)"/>
+          <g fill="none" stroke="#1f6a0a" stroke-width="2.5" stroke-linecap="round" opacity=".45" mask="url(#aroundCheck)">
+            <path d="M8 56Q30 36 52 12"/>
+            <path d="M22 42L17 28M22 42L36 46M35 28L33 15M35 28L49 30"/>
+          </g>
+        </g>
+        <path class="check" d="M18 33L28 43L46 23" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
     </div>
     <h1 id="title" aria-live="polite">Off</h1>
     <p class="sub" id="sub">Your status goes Away when you are idle.</p>
   </div>
 
   <button class="primary" id="toggle">Keep me green</button>
-
+  <p class="error" id="error" role="alert"></p>
   <section>
     <h2>Schedule</h2>
     <div class="card">
@@ -164,16 +231,27 @@
       </label>
     </div>
   </section>
+  </div>
 
+  <div class="settings">
   <section>
     <h2>Behavior</h2>
     <div class="card">
-      <label class="row">
-        <span class="label">Nudge every
-          <span class="hint">Chat apps go Away after about 5 to 10 minutes idle.</span>
-        </span>
-        <span class="hours"><input type="number" id="interval" min="5" max="240" step="5"> s</span>
-      </label>
+      <div class="row stack">
+        <label class="top">
+          <span class="label">Nudge every
+            <span class="hint">Teams goes Away after 5 minutes idle, Slack after 10. Max 4 minutes.</span>
+          </span>
+          <span class="hours"><input type="number" id="interval" min="5" max="240" step="5"> s</span>
+        </label>
+        <div class="presets" id="presets" role="group" aria-label="Nudge presets">
+          <button type="button" data-sec="30">30 s</button>
+          <button type="button" data-sec="60">1 min</button>
+          <button type="button" data-sec="120">2 min</button>
+          <button type="button" data-sec="180">3 min</button>
+          <button type="button" data-sec="240">4 min</button>
+        </div>
+      </div>
       <label class="row">
         <span class="label"><span>Let the screen turn off<span class="badge">EXPERIMENTAL</span></span>
           <span class="hint">The computer stays awake, the screen sleeps. Turn off "lock when screen turns off", or your status goes Away.</span>
@@ -189,8 +267,7 @@
     </div>
   </section>
 
-  <p class="error" id="error" role="alert"></p>
-  <footer>The CLI <code>make-it-green</code> uses the same settings.</footer>
+  </div>
 </main>
 
 <script>
@@ -211,9 +288,16 @@
       start_hour: +$("start").value,
       end_hour: +$("end").value,
       weekdays_only: $("weekdays").checked,
-      interval_sec: Math.max(5, +$("interval").value || 50),
+      interval_sec: clampInterval($("interval").value),
       screen_off: $("screenOff").checked,
     };
+  }
+
+  // Same limits as engine.MinIntervalSec / MaxIntervalSec.
+  const clampInterval = v => Math.min(240, Math.max(5, Math.round(+v) || 50));
+
+  function markPreset() {
+    for (const b of $("presets").children) b.setAttribute("aria-pressed", +b.dataset.sec === +$("interval").value);
   }
 
   function fillForm() {
@@ -224,6 +308,7 @@
     $("interval").value = cfg.interval_sec;
     $("screenOff").checked = cfg.screen_off;
     dimSchedule();
+    markPreset();
   }
 
   function dimSchedule() {
@@ -233,11 +318,13 @@
   }
 
   function duration(ms) {
-    const m = Math.floor(ms / 60000), h = Math.floor(m / 60);
-    return h ? `${h}h ${m % 60}m` : `${m}m`;
+    const s = Math.max(0, Math.floor(ms / 1000)), m = Math.floor(s / 60), h = Math.floor(m / 60);
+    if (h) return `${h}h ${String(m % 60).padStart(2, "0")}m`;
+    return m ? `${m}m ${String(s % 60).padStart(2, "0")}s` : `${s}s`;
   }
 
   function render() {
+    if ($("app").dataset.state !== state) $("app").dataset.from = $("app").dataset.state;
     $("app").dataset.state = state;
     $("toggle").textContent = running ? "Stop" : "Keep me green";
     if (state === "active") {
@@ -255,6 +342,8 @@
 
   async function apply() {
     cfg = readForm();
+    $("interval").value = cfg.interval_sec;
+    markPreset();
     try {
       showError("");
       if (running) await App().Start(cfg); else await App().SaveConfig(cfg);
@@ -274,6 +363,12 @@
   for (const id of ["schedule", "start", "end", "weekdays", "interval", "screenOff"])
     $(id).addEventListener("change", () => { dimSchedule(); apply(); });
 
+  $("presets").addEventListener("click", e => {
+    if (!e.target.dataset.sec) return;
+    $("interval").value = e.target.dataset.sec;
+    apply();
+  });
+
   $("autostart").addEventListener("change", async e => {
     try { showError(""); await App().SetAutostart(e.target.checked); }
     catch (err) { showError(err); e.target.checked = !e.target.checked; }
@@ -281,16 +376,16 @@
 
   const short = s => s.startsWith("active") ? "active" : s.startsWith("paused") ? "paused" : "off";
 
-  window.runtime.EventsOn("state", (s, err) => {
+  window.runtime.EventsOn("state", (s, err, greenSince) => {
     if (err) { showError(err); return; }
     const next = short(s);
-    if (next === "active" && state !== "active") since = Date.now();
+    since = greenSince || Date.now();
     state = next;
     running = next !== "off";
     render();
   });
 
-  setInterval(() => state === "active" && render(), 30000);
+  setInterval(() => state === "active" && render(), 1000);
 
   (async () => {
     try {
@@ -298,7 +393,7 @@
       $("autostart").checked = await App().Autostart();
       state = short(await App().State());
       running = state !== "off";
-      since = Date.now();
+      since = (await App().GreenSince()) || Date.now();
     } catch (e) { showError(e); cfg = cfg || {}; }
     fillForm();
     render();

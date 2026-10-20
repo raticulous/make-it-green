@@ -61,6 +61,12 @@ func (c Config) InHours(t time.Time) bool {
 	return t.Hour() >= c.StartHour && t.Hour() < c.EndHour
 }
 
+// Nudge interval limits. The max stays under the Teams idle timeout (about 5 minutes; Slack is about 10).
+const (
+	MinIntervalSec = 5
+	MaxIntervalSec = 240
+)
+
 type State string
 
 const (
@@ -74,9 +80,7 @@ func Run(ctx context.Context, c Config, onState func(State, error)) error {
 	if onState == nil {
 		onState = func(State, error) {}
 	}
-	if c.IntervalSec < 5 {
-		c.IntervalSec = 5
-	}
+	c.IntervalSec = min(max(c.IntervalSec, MinIntervalSec), MaxIntervalSec)
 	var release func()
 	defer func() {
 		if release != nil {

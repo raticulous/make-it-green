@@ -13,23 +13,30 @@ import (
 var (
 	//go:embed icons/tray-on.png
 	trayOnPNG []byte
+	//go:embed icons/tray-paused.png
+	trayPausedPNG []byte
 	//go:embed icons/tray-off.png
 	trayOffPNG []byte
 	//go:embed icons/tray-on.ico
 	trayOnICO []byte
+	//go:embed icons/tray-paused.ico
+	trayPausedICO []byte
 	//go:embed icons/tray-off.ico
 	trayOffICO []byte
 )
 
-// setTray shows the on icon only while the engine nudges (not when off or paused).
+// setTray shows a green leaf while the engine nudges, yellow when paused, faded grey when off.
 func (a *App) setTray(state string) {
-	on, off := trayOnPNG, trayOffPNG
+	on, paused, off := trayOnPNG, trayPausedPNG, trayOffPNG
 	if goruntime.GOOS == "windows" {
-		on, off = trayOnICO, trayOffICO
+		on, paused, off = trayOnICO, trayPausedICO, trayOffICO
 	}
 	icon := off
-	if state == string(engine.Active) {
+	switch state {
+	case string(engine.Active):
 		icon = on
+	case string(engine.Paused):
+		icon = paused
 	}
 	systray.SetIcon(icon)
 	systray.SetTooltip("Make It Green: " + state)
@@ -73,6 +80,7 @@ func (a *App) onTrayReady() {
 }
 
 func (a *App) showWindow() {
+	showInDock()
 	runtime.WindowShow(a.ctx)
 	runtime.WindowUnminimise(a.ctx)
 }

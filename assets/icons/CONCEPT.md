@@ -5,4 +5,5 @@
 - C. Leaf badge (chosen): the status light is a diagonal leaf instead of a circle, with a bold white check in it.
 
 Chosen: C. It keeps the "available, all good" check but has its own silhouette (a pointed leaf, not the round Teams badge), and the leaf carries the "green" name. It is one solid shape plus one stroke, so it stays crisp at 16 px. The off state is the same leaf as a mid-grey (#8c8c8c) outline with a grey check, visible on both light and dark taskbars and clearly "inactive" next to the filled on state.
+Tray: on is the filled green leaf with a white check, paused is a plain yellow leaf, off is a faded grey outline. All three sit at 80% of the canvas with thin strokes, so they match the size of other tray icons.
 The app icon is the on-state leaf with a gradient and a small stem, on a dark rounded-square plate.
