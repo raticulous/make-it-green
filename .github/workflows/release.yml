@@ -43,6 +43,8 @@ jobs:
           lipo -create -output out/make-it-green out/cli-arm64 out/cli-amd64 && rm out/cli-*
           (cd cmd/make-it-green-gui && wails build -skipbindings -trimpath -platform darwin/universal)
           cp -R cmd/make-it-green-gui/build/bin/*.app out/
+          # ad-hoc sign: an unsealed bundle shows "is damaged" on download. Developer ID + notarize removes the Gatekeeper prompt.
+          codesign --force --deep -s - out/*.app out/make-it-green
           (cd out && zip -qry ../make-it-green-${{ matrix.name }}.zip .)
 
       - name: Windows
