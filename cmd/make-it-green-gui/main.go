@@ -39,6 +39,7 @@ type App struct {
 	since time.Time // when the status last turned green
 
 	toggleItem atomic.Pointer[systray.MenuItem] // set once the tray is ready
+	statusItem atomic.Pointer[systray.MenuItem]
 }
 
 func (a *App) GetConfig() (engine.Config, error) { return engine.LoadConfig() }

@@ -24,6 +24,18 @@ static void showInDock(void) {
 		[NSApp activateIgnoringOtherApps:YES];
 	});
 }
+
+// macOS 27 hides menu item images by default (preferredImageVisibility = automatic), so ask for them.
+// ponytail: reaches into fyne.io/systray's global `owner` and its `menu` ivar; recheck on a systray upgrade.
+// KVC + respondsToSelector so it builds with older SDKs and is a no-op before macOS 27.
+extern id owner;
+static void showMenuImages(void) {
+	dispatch_async(dispatch_get_main_queue(), ^{
+		NSMenu *m = [owner valueForKey:@"menu"];
+		for (NSMenuItem *i in m.itemArray)
+			if ([i respondsToSelector:@selector(setPreferredImageVisibility:)]) [i setValue:@1 forKey:@"preferredImageVisibility"];
+	});
+}
 */
 import "C"
 
@@ -37,3 +49,5 @@ func (a *App) startTray() {
 }
 
 func showInDock() { C.showInDock() }
+
+func showMenuImages() { C.showMenuImages() }

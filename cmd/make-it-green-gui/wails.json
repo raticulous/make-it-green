@@ -1,6 +1,6 @@
 {
   "$schema": "https://wails.io/schemas/config.v2.json",
-  "name": "make-it-green",
+  "name": "Make It Green",
   "outputfilename": "make-it-green-gui",
   "frontend:dir": "frontend",
   "frontend:install": "",
@@ -8,6 +8,6 @@
   "info": {
     "productName": "Make It Green",
     "companyName": "make-it-green",
-    "productVersion": "0.1.0"
+    "productVersion": "0.3.0"
   }
 }

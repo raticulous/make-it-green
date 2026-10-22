@@ -17,3 +17,5 @@ func (a *App) startTray() {
 }
 
 func showInDock() {}
+
+func showMenuImages() {}
