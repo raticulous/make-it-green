@@ -32,7 +32,7 @@ Requirements per OS:
 
 | OS | Needs |
 |---|---|
-| Linux | `xdotool`; GUI needs `libwebkit2gtk-4.1` and `libgtk-3` |
+| Linux | X11: `xdotool`. Wayland: `ydotool`, user in the `input` group, `systemctl --user enable --now ydotool`. GUI needs `libwebkit2gtk-4.1` and `libgtk-3` |
 | macOS | Accessibility permission (System Settings > Privacy & Security > Accessibility) |
 | Windows | WebView2 runtime (included in Windows 10/11) |
 

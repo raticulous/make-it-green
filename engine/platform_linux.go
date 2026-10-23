@@ -11,9 +11,16 @@ import (
 	"syscall"
 )
 
-// ponytail: X11/XWayland only via xdotool (what the old script used).
-// Add ydotool/uinput when Teams or Slack runs as a native Wayland client.
+// On Wayland, xdotool moves only the XWayland pointer: native Wayland apps (Edge/Chrome
+// Teams PWA, Electron with ozone) and the compositor idle timer do not see it.
+// ydotool writes to /dev/uinput, so every app sees the move.
 func nudge() error {
+	if os.Getenv("WAYLAND_DISPLAY") != "" {
+		if err := exec.Command("ydotool", "mousemove", "-x", "1", "-y", "0").Run(); err != nil {
+			return fmt.Errorf("ydotool: %w (install ydotool, add your user to the input group, run: systemctl --user enable --now ydotool)", err)
+		}
+		return exec.Command("ydotool", "mousemove", "-x", "-1", "-y", "0").Run()
+	}
 	if err := exec.Command("xdotool", "mousemove_relative", "--", "1", "0").Run(); err != nil {
 		return fmt.Errorf("xdotool: %w (install xdotool)", err)
 	}
