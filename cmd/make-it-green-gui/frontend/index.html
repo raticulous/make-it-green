@@ -319,6 +319,12 @@
         </span>
         <span class="switch"><input type="checkbox" id="autostart"><span></span></span>
       </label>
+      <label class="row">
+        <span class="label">Update automatically
+          <span class="hint" id="updateStatus"></span>
+        </span>
+        <span class="switch"><input type="checkbox" id="autoUpdate"><span></span></span>
+      </label>
     </div>
   </section>
 
@@ -345,6 +351,7 @@
       weekdays_only: $("weekdays").checked,
       interval_sec: clampInterval($("interval").value),
       screen_off: $("screenOff").checked,
+      auto_update: $("autoUpdate").checked,
       pause_mode: $("pauseMode").value,
       pause_minutes: Math.min(1440, Math.max(1, Math.round(+$("pauseMinutes").value) || 30)),
     };
@@ -365,6 +372,7 @@
     $("weekdays").checked = cfg.weekdays_only;
     $("interval").value = cfg.interval_sec;
     $("screenOff").checked = cfg.screen_off;
+    $("autoUpdate").checked = cfg.auto_update;
     $("pauseMode").value = cfg.pause_mode;
     $("pauseMinutes").value = cfg.pause_minutes;
     dimSchedule();
@@ -430,10 +438,13 @@
     try { showError(""); await App().Stop(); } catch (e) { showError(e); }
   });
 
-  $("openSettings").addEventListener("click", () => $("app").dataset.view = "settings");
+  $("openSettings").addEventListener("click", async () => {
+    $("app").dataset.view = "settings";
+    try { $("updateStatus").textContent = await App().UpdateStatus(); } catch {}
+  });
   $("closeSettings").addEventListener("click", () => $("app").dataset.view = "home");
 
-  for (const id of ["schedule", "start", "end", "weekdays", "interval", "screenOff", "pauseMode", "pauseMinutes"])
+  for (const id of ["schedule", "start", "end", "weekdays", "interval", "screenOff", "pauseMode", "pauseMinutes", "autoUpdate"])
     $(id).addEventListener("change", () => { dimSchedule(); apply(); });
 
   $("presets").addEventListener("click", e => {

@@ -23,10 +23,11 @@ type Config struct {
 	PauseMinutes int    `json:"pause_minutes"`
 	PausedUntil  int64  `json:"paused_until,omitempty"` // Unix ms; the engine stays paused until then
 	Stopped      bool   `json:"stopped,omitempty"`      // the user stopped it; autostart does not start it
+	AutoUpdate   bool   `json:"auto_update"`            // GUI: install new GitHub releases by itself
 }
 
 func DefaultConfig() Config {
-	return Config{IntervalSec: 50, StartHour: 9, EndHour: 18, WeekdaysOnly: true, PauseMode: "next_day", PauseMinutes: 30}
+	return Config{IntervalSec: 50, StartHour: 9, EndHour: 18, WeekdaysOnly: true, PauseMode: "next_day", PauseMinutes: 30, AutoUpdate: true}
 }
 
 func ConfigPath() string {

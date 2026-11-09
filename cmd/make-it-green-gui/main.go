@@ -38,6 +38,8 @@ type App struct {
 	last  string    // last engine state, for a UI that loads after the engine started
 	since time.Time // when the status last turned green
 
+	updateStatus string // last result of the update check, for the settings view
+
 	toggleItem atomic.Pointer[systray.MenuItem] // set once the tray is ready
 	statusItem atomic.Pointer[systray.MenuItem]
 }
@@ -164,6 +166,14 @@ func installDesktopEntry() error {
 }
 
 func main() {
+	wasGreen, restarted := os.LookupEnv(restartEnv)
+	if restarted {
+		os.Unsetenv(restartEnv)
+		// ponytail: fixed wait for the old instance to quit and free the single-instance lock.
+		// Pass the old pid and wait on it if 2 s ever proves short.
+		time.Sleep(2 * time.Second)
+	}
+	cleanOldExe()
 	if goruntime.GOOS == "linux" {
 		if err := installDesktopEntry(); err != nil {
 			println("desktop entry:", err.Error())
@@ -174,7 +184,7 @@ func main() {
 	err := wails.Run(&options.App{
 		Title:            "Make It Green",
 		Width:            400,
-		Height:           620, // fits the settings view without scrolling
+		Height:           680, // fits the settings view without scrolling
 		DisableResize:    true,
 		AssetServer:      &assetserver.Options{Assets: frontend},
 		BackgroundColour: &options.RGBA{R: 15, G: 17, B: 16, A: 1},
@@ -189,9 +199,12 @@ func main() {
 			app.ctx = ctx
 			app.startTray()
 			// Autostart launches the app with no args, so it starts working right away.
-			if c, err := engine.LoadConfig(); err == nil && engine.AutostartEnabled() && !c.Stopped {
+			// After an update, it continues as the old instance was.
+			c, err := engine.LoadConfig()
+			if err == nil && (wasGreen == "true" || !restarted && engine.AutostartEnabled() && !c.Stopped) {
 				app.Start(c)
 			}
+			go app.updateLoop()
 		},
 		Bind: []any{app},
 	})
