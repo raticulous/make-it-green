@@ -89,7 +89,3 @@ func AutostartEnabled() bool {
 	_, err := os.Stat(autostartPath())
 	return err == nil
 }
-
-// Teams on this OS has no idle override, so screen-off mode falls back to nudge + blank.
-func keepTeamsActiveWithoutInput() (bool, error) { return false, nil }
-func releaseTeamsActive()                        {}

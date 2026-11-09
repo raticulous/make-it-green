@@ -105,7 +105,6 @@ func Run(ctx context.Context, c Config, onState func(State, error)) error {
 		if release != nil {
 			release()
 		}
-		releaseTeamsActive()
 	}()
 
 	tick := time.NewTicker(time.Duration(c.IntervalSec) * time.Second)
@@ -131,27 +130,15 @@ func Run(ctx context.Context, c Config, onState func(State, error)) error {
 					release()
 					release = nil
 				}
-				releaseTeamsActive()
 			}
 			last = state
 			onState(state, nil)
 		}
 		if state == Active {
-			quiet := false
+			if err := nudge(); err != nil {
+				onState(state, err)
+			}
 			if c.ScreenOff {
-				// Best case: tell Teams directly that we are active. No input, so the
-				// OS turns the screen off and locks it on its own schedule.
-				var err error
-				if quiet, err = keepTeamsActiveWithoutInput(); err != nil {
-					onState(state, err)
-				}
-			}
-			if !quiet {
-				if err := nudge(); err != nil {
-					onState(state, err)
-				}
-			}
-			if c.ScreenOff && !quiet {
 				// ponytail: the nudge wakes the screen, so blank it again. This re-blanks
 				// even when the user is back; add user-return detection if it annoys.
 				if err := displayOff(); err != nil {

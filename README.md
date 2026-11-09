@@ -48,14 +48,7 @@ make-it-green status
 
 ## Can the computer sleep or the screen turn off, with Teams or Slack still green?
 
-**Screen off, computer awake, Linux + teams-for-linux: yes, with no input at all (`-screen-off`).**
-teams-for-linux can read its idle state from a file (`idleDetection.forceState`).
-The app turns this on in teams-for-linux's `config.json` (restart Teams once) and writes `active` to the file.
-Nothing moves the mouse, so the screen sleeps and locks on the OS schedule while Teams stays green.
-When the app stops, it deletes the file and Teams uses normal idle detection again.
-Slack has no such file. If Slack is running, the app falls back to the mode below.
-
-**Screen off, computer awake, Slack and other Teams apps: yes, experimental (`-screen-off`).**
+**Screen off, computer awake: yes, experimental (`-screen-off`).**
 The app holds a "system awake" lock but lets the display sleep. It turns the display off after each nudge
 (`SC_MONITORPOWER` on Windows, `pmset displaysleepnow` on macOS, `kscreen-doctor` / Mutter D-Bus / `xset` on Linux).
 Limits:

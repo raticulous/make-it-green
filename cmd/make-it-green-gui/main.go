@@ -173,10 +173,9 @@ func main() {
 	frontend, _ := fs.Sub(assets, "frontend")
 	err := wails.Run(&options.App{
 		Title:            "Make It Green",
-		Width:            380,
-		Height:           560,
-		MinWidth:         340,
-		MinHeight:        480,
+		Width:            400,
+		Height:           620, // fits the settings view without scrolling
+		DisableResize:    true,
 		AssetServer:      &assetserver.Options{Assets: frontend},
 		BackgroundColour: &options.RGBA{R: 15, G: 17, B: 16, A: 1},
 		// Closing the window hides it; the tray icon brings it back or quits.
