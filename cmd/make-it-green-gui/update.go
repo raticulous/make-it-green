@@ -93,10 +93,18 @@ func (a *App) UpdateStatus() string {
 	return "Version " + version + " · " + a.updateStatus
 }
 
-// updateLoop checks for a new release soon after start, then every 6 hours.
+type release struct{ Tag, URL, Digest string }
+
+func updatable() bool {
+	_, ok := parseVersion(version)
+	return ok && releaseAsset() != ""
+}
+
+// updateLoop checks a minute after start, then every 6 hours. It never installs on its own:
+// it shows the window and asks, once per new version.
 func (a *App) updateLoop() {
-	if _, ok := parseVersion(version); !ok || releaseAsset() == "" {
-		a.setUpdateStatus("no automatic updates for this build")
+	if !updatable() {
+		a.setUpdateStatus("this build does not update")
 		return
 	}
 	for wait := time.Minute; ; wait = 6 * time.Hour {
@@ -108,15 +116,27 @@ func (a *App) updateLoop() {
 		if c, err := engine.LoadConfig(); err != nil || !c.AutoUpdate {
 			continue
 		}
-		if err := a.update(); err != nil {
-			a.setUpdateStatus("update failed: " + err.Error())
+		tag, err := a.CheckForUpdate()
+		if err != nil || tag == "" {
+			continue
+		}
+		a.mu.Lock()
+		ask := a.asked != tag
+		a.asked = tag
+		a.mu.Unlock()
+		if ask {
+			a.showWindow()
+			runtime.EventsEmit(a.ctx, "update-available", tag)
 		}
 	}
 }
 
-// update installs the latest release if it is newer, then restarts the app.
-func (a *App) update() error {
-	ctx, cancel := context.WithTimeout(a.ctx, 10*time.Minute)
+// CheckForUpdate returns the tag of a newer release, or "" when this version is the latest.
+func (a *App) CheckForUpdate() (string, error) {
+	if !updatable() {
+		return "", errors.New("this build does not update (dev build or unsupported system)")
+	}
+	ctx, cancel := context.WithTimeout(a.ctx, time.Minute)
 	defer cancel()
 	var rel struct {
 		Tag    string `json:"tag_name"`
@@ -127,28 +147,45 @@ func (a *App) update() error {
 		} `json:"assets"`
 	}
 	if err := getJSON(ctx, releasesAPI, &rel); err != nil {
-		return err
+		a.setUpdateStatus("check failed")
+		return "", err
 	}
 	if !newer(rel.Tag, version) {
 		a.setUpdateStatus("up to date")
-		return nil
+		return "", nil
 	}
 	for _, as := range rel.Assets {
-		if as.Name != releaseAsset() {
-			continue
+		if as.Name == releaseAsset() {
+			a.mu.Lock()
+			a.pending = release{rel.Tag, as.URL, as.Digest}
+			a.updateStatus = rel.Tag + " is available"
+			a.mu.Unlock()
+			return rel.Tag, nil
 		}
-		a.setUpdateStatus("installing " + rel.Tag)
-		exe, root, err := installRoot()
-		if err != nil {
-			return err
-		}
-		if err := install(ctx, root, as.URL, as.Digest); err != nil {
-			return err
-		}
-		a.restart(exe)
-		return nil
 	}
-	return fmt.Errorf("release %s has no %s", rel.Tag, releaseAsset())
+	return "", fmt.Errorf("release %s has no %s", rel.Tag, releaseAsset())
+}
+
+// InstallUpdate installs the release found by CheckForUpdate, then restarts the app.
+func (a *App) InstallUpdate() error {
+	a.mu.Lock()
+	r := a.pending
+	a.mu.Unlock()
+	if r.Tag == "" {
+		return errors.New("no update to install")
+	}
+	ctx, cancel := context.WithTimeout(a.ctx, 10*time.Minute)
+	defer cancel()
+	exe, root, err := installRoot()
+	if err == nil {
+		err = install(ctx, root, r.URL, r.Digest)
+	}
+	if err != nil {
+		a.setUpdateStatus("update failed")
+		return err
+	}
+	a.restart(exe)
+	return nil
 }
 
 func getJSON(ctx context.Context, url string, v any) error {

@@ -23,7 +23,7 @@ type Config struct {
 	PauseMinutes int    `json:"pause_minutes"`
 	PausedUntil  int64  `json:"paused_until,omitempty"` // Unix ms; the engine stays paused until then
 	Stopped      bool   `json:"stopped,omitempty"`      // the user stopped it; autostart does not start it
-	AutoUpdate   bool   `json:"auto_update"`            // GUI: install new GitHub releases by itself
+	AutoUpdate   bool   `json:"auto_update"`            // GUI: look for new GitHub releases and offer to install them
 }
 
 func DefaultConfig() Config {

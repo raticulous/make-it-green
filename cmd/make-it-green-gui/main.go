@@ -38,7 +38,9 @@ type App struct {
 	last  string    // last engine state, for a UI that loads after the engine started
 	since time.Time // when the status last turned green
 
-	updateStatus string // last result of the update check, for the settings view
+	updateStatus string  // last result of the update check, for the settings view
+	pending      release // newer release found by CheckForUpdate
+	asked        string  // tag the automatic check already asked about
 
 	toggleItem atomic.Pointer[systray.MenuItem] // set once the tray is ready
 	statusItem atomic.Pointer[systray.MenuItem]
