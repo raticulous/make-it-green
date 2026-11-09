@@ -52,15 +52,26 @@
     user-select: none;
     -webkit-user-select: none;
   }
-  main {
-    max-width: 880px; margin: 0 auto; padding: 24px;
-    display: grid; grid-template-columns: 300px 1fr; gap: 28px; align-items: start;
+  main { position: relative; max-width: 380px; margin: 0 auto; padding: 20px 16px; }
+  .view { display: flex; flex-direction: column; gap: 16px; }
+  main[data-view="home"] #settingsView, main[data-view="settings"] #homeView { display: none; }
+
+  .icon-btn {
+    appearance: none; border: 0; background: transparent; color: var(--muted); cursor: pointer;
+    width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
   }
-  .side { display: flex; flex-direction: column; gap: 16px; }
-  .settings { display: flex; flex-direction: column; gap: 16px; }
-  @media (max-width: 640px) {
-    main { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
+  .icon-btn:hover { color: var(--text); background: var(--grey-soft); }
+  .icon-btn svg { width: 20px; height: 20px; }
+  #openSettings { position: absolute; top: 12px; right: 12px; z-index: 1; }
+  .bar { display: flex; align-items: center; gap: 4px; margin-left: -8px; }
+  .bar h1 { font-size: 17px; }
+
+  .link {
+    appearance: none; border: 0; background: none; cursor: pointer; font: inherit; font-size: 12.5px;
+    color: var(--muted); text-decoration: underline; text-underline-offset: 2px; align-self: center; margin-top: -8px;
   }
+  .link:hover { color: var(--danger); }
+  [data-state="off"] .link { visibility: hidden; }
 
   /* --- presence hero --- */
   .hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding-top: 4px; }
@@ -118,6 +129,8 @@
     background: transparent; color: var(--text); box-shadow: inset 0 0 0 1.5px var(--line);
   }
 
+  [data-held="true"] .primary { background: var(--green); color: var(--on-accent); box-shadow: none; }
+
   /* --- settings --- */
   section { display: flex; flex-direction: column; gap: 8px; }
   h2 { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 0 4px; }
@@ -151,15 +164,17 @@
   input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   .stack { flex-direction: column; align-items: stretch; }
   .stack > .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+  /* one row of equal chips, so both preset rows line up */
+  .presets { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; }
   .presets button {
     appearance: none; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
-    height: 28px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line);
+    height: 28px; padding: 0 4px; white-space: nowrap; border-radius: 999px; border: 1px solid var(--line);
     background: var(--bg); color: var(--muted); transition: background .15s, color .15s, border-color .15s;
   }
   .presets button:hover { color: var(--text); }
   .presets button[aria-pressed="true"] { background: var(--green-soft); border-color: transparent; color: var(--green); }
   .hours { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+  .unit { width: 2em; }
 
   :focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 
@@ -168,8 +183,14 @@
 </style>
 </head>
 <body>
-<main id="app" data-state="off">
-  <div class="side">
+<main id="app" data-state="off" data-view="home">
+  <div class="view" id="homeView">
+  <button class="icon-btn" id="openSettings" aria-label="Settings" title="Settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  </button>
   <div class="hero">
     <div class="orb" aria-hidden="true">
       <svg viewBox="0 0 64 64">
@@ -210,6 +231,7 @@
   </div>
 
   <button class="primary" id="toggle">Keep me green</button>
+  <button class="link" id="stop">Stop completely</button>
   <p class="error" id="error" role="alert"></p>
   <section>
     <h2>Schedule</h2>
@@ -233,7 +255,40 @@
   </section>
   </div>
 
-  <div class="settings">
+  <div class="view" id="settingsView">
+  <div class="bar">
+    <button class="icon-btn" id="closeSettings" aria-label="Back" title="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <h1>Settings</h1>
+  </div>
+  <section>
+    <h2>Pause</h2>
+    <div class="card">
+      <div class="row">
+        <span class="label">Pause button
+          <span class="hint">Green turns back on by itself after the pause.</span>
+        </span>
+        <select id="pauseMode" aria-label="Pause length">
+          <option value="next_day">Until next work day</option>
+          <option value="minutes">For some minutes</option>
+        </select>
+      </div>
+      <div class="row stack" id="pauseMinutesRow">
+        <label class="top">
+          <span class="label">Minutes</span>
+          <span class="hours"><input type="number" id="pauseMinutes" min="1" max="1440" step="5"><span class="unit">min</span></span>
+        </label>
+        <div class="presets" id="pausePresets" role="group" aria-label="Pause presets">
+          <button type="button" data-min="5">5 min</button>
+          <button type="button" data-min="10">10 min</button>
+          <button type="button" data-min="15">15 min</button>
+          <button type="button" data-min="30">30 min</button>
+          <button type="button" data-min="60">1 hour</button>
+        </div>
+      </div>
+    </div>
+  </section>
   <section>
     <h2>Behavior</h2>
     <div class="card">
@@ -242,7 +297,7 @@
           <span class="label">Nudge every
             <span class="hint">Teams goes Away after 5 minutes idle, Slack after 10. Max 4 minutes.</span>
           </span>
-          <span class="hours"><input type="number" id="interval" min="5" max="240" step="5"> s</span>
+          <span class="hours"><input type="number" id="interval" min="5" max="240" step="5"><span class="unit">s</span></span>
         </label>
         <div class="presets" id="presets" role="group" aria-label="Nudge presets">
           <button type="button" data-sec="30">30 s</button>
@@ -274,7 +329,7 @@
   const App = () => window.go.main.App;
   const $ = id => document.getElementById(id);
   const pad = h => String(h).padStart(2, "0") + ":00";
-  let cfg, running = false, since = null, state = "off";
+  let cfg, running = false, held = false, since = null, state = "off";
 
   for (const sel of [$("start"), $("end")])
     for (let h = 0; h <= 24; h++) sel.add(new Option(pad(h), h));
@@ -290,6 +345,8 @@
       weekdays_only: $("weekdays").checked,
       interval_sec: clampInterval($("interval").value),
       screen_off: $("screenOff").checked,
+      pause_mode: $("pauseMode").value,
+      pause_minutes: Math.min(1440, Math.max(1, Math.round(+$("pauseMinutes").value) || 30)),
     };
   }
 
@@ -298,6 +355,7 @@
 
   function markPreset() {
     for (const b of $("presets").children) b.setAttribute("aria-pressed", +b.dataset.sec === +$("interval").value);
+    for (const b of $("pausePresets").children) b.setAttribute("aria-pressed", +b.dataset.min === +$("pauseMinutes").value);
   }
 
   function fillForm() {
@@ -307,6 +365,8 @@
     $("weekdays").checked = cfg.weekdays_only;
     $("interval").value = cfg.interval_sec;
     $("screenOff").checked = cfg.screen_off;
+    $("pauseMode").value = cfg.pause_mode;
+    $("pauseMinutes").value = cfg.pause_minutes;
     dimSchedule();
     markPreset();
   }
@@ -315,6 +375,7 @@
     const off = !$("schedule").checked;
     $("hoursRow").classList.toggle("dim", off);
     $("weekdaysRow").classList.toggle("dim", off);
+    $("pauseMinutesRow").classList.toggle("dim", $("pauseMode").value !== "minutes");
   }
 
   function duration(ms) {
@@ -326,11 +387,17 @@
   function render() {
     if ($("app").dataset.state !== state) $("app").dataset.from = $("app").dataset.state;
     $("app").dataset.state = state;
-    $("toggle").textContent = running ? "Stop" : "Keep me green";
+    $("app").dataset.held = held;
+    $("toggle").textContent = held ? "Resume" : running ? "Pause" : "Keep me green";
     if (state === "active") {
       $("title").textContent = "You're green";
       const extra = cfg.screen_off ? " · screen may turn off" : "";
       $("sub").textContent = `Green for ${duration(Date.now() - since)}${extra}`;
+    } else if (held) {
+      $("title").textContent = "Paused";
+      const until = new Date(cfg.paused_until), today = until.toDateString() === new Date().toDateString();
+      const hm = until.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      $("sub").textContent = `Resumes ${today ? "at" : until.toLocaleDateString([], { weekday: "short" })} ${hm}`;
     } else if (state === "paused") {
       $("title").textContent = "Paused";
       $("sub").textContent = `Outside work hours · resumes at ${pad(cfg.start_hour)}`;
@@ -351,21 +418,33 @@
     render();
   }
 
+  // The engine "state" event re-renders after each call.
   $("toggle").addEventListener("click", async () => {
     try {
       showError("");
-      if (running) { await App().Stop(); running = false; }
-      else { cfg = readForm(); await App().Start(cfg); running = true; }
+      cfg = await (running && !held ? App().Pause(readForm()) : App().Resume(readForm()));
     } catch (e) { showError(e); }
-    render();
   });
 
-  for (const id of ["schedule", "start", "end", "weekdays", "interval", "screenOff"])
+  $("stop").addEventListener("click", async () => {
+    try { showError(""); await App().Stop(); } catch (e) { showError(e); }
+  });
+
+  $("openSettings").addEventListener("click", () => $("app").dataset.view = "settings");
+  $("closeSettings").addEventListener("click", () => $("app").dataset.view = "home");
+
+  for (const id of ["schedule", "start", "end", "weekdays", "interval", "screenOff", "pauseMode", "pauseMinutes"])
     $(id).addEventListener("change", () => { dimSchedule(); apply(); });
 
   $("presets").addEventListener("click", e => {
     if (!e.target.dataset.sec) return;
     $("interval").value = e.target.dataset.sec;
+    apply();
+  });
+
+  $("pausePresets").addEventListener("click", e => {
+    if (!e.target.dataset.min) return;
+    $("pauseMinutes").value = e.target.dataset.min;
     apply();
   });
 
@@ -376,12 +455,13 @@
 
   const short = s => s.startsWith("active") ? "active" : s.startsWith("paused") ? "paused" : "off";
 
-  window.runtime.EventsOn("state", (s, err, greenSince) => {
+  window.runtime.EventsOn("state", async (s, err, greenSince) => {
     if (err) { showError(err); return; }
-    const next = short(s);
     since = greenSince || Date.now();
-    state = next;
-    running = next !== "off";
+    state = short(s);
+    running = state !== "off";
+    held = s === "paused (by you)";
+    try { cfg = { ...cfg, paused_until: (await App().GetConfig()).paused_until }; } catch {} // the tray can pause too
     render();
   });
 
@@ -391,8 +471,10 @@
     try {
       cfg = await App().GetConfig();
       $("autostart").checked = await App().Autostart();
-      state = short(await App().State());
+      const s = await App().State();
+      state = short(s);
       running = state !== "off";
+      held = s === "paused (by you)";
       since = (await App().GreenSince()) || Date.now();
     } catch (e) { showError(e); cfg = cfg || {}; }
     fillForm();

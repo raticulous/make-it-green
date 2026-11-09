@@ -70,6 +70,8 @@ func (a *App) setTray(state string) {
 		icon, dot, status = on, statusOnPNG, "Make It Green is running"
 	case string(engine.Paused):
 		icon, dot, status = paused, statusPausedPNG, "Make It Green is paused (outside work hours)"
+	case string(engine.Held):
+		icon, dot, status = paused, statusPausedPNG, "Make It Green is paused"
 	}
 	if goruntime.GOOS == "darwin" {
 		systray.SetTemplateIcon(icon, icon)
@@ -84,9 +86,12 @@ func (a *App) setTray(state string) {
 		}
 	}
 	if item := a.toggleItem.Load(); item != nil {
-		label, png := "Stop", menuStopPNG
-		if state == "off" {
+		label, png := "Pause", menuStopPNG
+		switch state {
+		case "off":
 			label, png = "Keep me green", menuStartPNG
+		case string(engine.Held):
+			label, png = "Resume", menuStartPNG
 		}
 		item.SetTitle(label)
 		menuIcon(item, png)
@@ -102,6 +107,7 @@ func (a *App) onTrayReady() {
 	menuIcon(show, menuOpenPNG)
 	toggle := systray.AddMenuItem("Keep me green", "")
 	a.toggleItem.Store(toggle)
+	stop := systray.AddMenuItem("Stop completely", "Stay off, also at the next login")
 	systray.AddSeparator()
 	quit := systray.AddMenuItem("Quit Make It Green", "Stop and quit")
 	menuIcon(quit, menuQuitPNG)
@@ -116,11 +122,17 @@ func (a *App) onTrayReady() {
 			case <-show.ClickedCh:
 				a.showWindow()
 			case <-toggle.ClickedCh:
-				if a.State() != "off" {
-					a.Stop()
-				} else if c, err := a.GetConfig(); err == nil {
-					a.Start(c)
+				c, err := a.GetConfig()
+				if err != nil {
+					continue
 				}
+				if s := a.State(); s == "off" || s == string(engine.Held) {
+					a.Resume(c)
+				} else {
+					a.Pause(c)
+				}
+			case <-stop.ClickedCh:
+				a.Stop()
 			case <-quit.ClickedCh:
 				runtime.Quit(a.ctx)
 				return

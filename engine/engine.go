@@ -18,10 +18,15 @@ type Config struct {
 	EndHour      int  `json:"end_hour"`
 	WeekdaysOnly bool `json:"weekdays_only"`
 	ScreenOff    bool `json:"screen_off"` // experimental: let the display sleep, keep Teams and Slack green
+
+	PauseMode    string `json:"pause_mode"` // "minutes" or "next_day": how long the Pause button pauses
+	PauseMinutes int    `json:"pause_minutes"`
+	PausedUntil  int64  `json:"paused_until,omitempty"` // Unix ms; the engine stays paused until then
+	Stopped      bool   `json:"stopped,omitempty"`      // the user stopped it; autostart does not start it
 }
 
 func DefaultConfig() Config {
-	return Config{IntervalSec: 50, StartHour: 9, EndHour: 18, WeekdaysOnly: true}
+	return Config{IntervalSec: 50, StartHour: 9, EndHour: 18, WeekdaysOnly: true, PauseMode: "next_day", PauseMinutes: 30}
 }
 
 func ConfigPath() string {
@@ -61,6 +66,19 @@ func (c Config) InHours(t time.Time) bool {
 	return t.Hour() >= c.StartHour && t.Hour() < c.EndHour
 }
 
+// ResumeAt is when a pause made at now ends: after PauseMinutes,
+// or at StartHour of the next work day (today, if StartHour is still ahead).
+func (c Config) ResumeAt(now time.Time) time.Time {
+	if c.PauseMode == "minutes" {
+		return now.Add(time.Duration(max(c.PauseMinutes, 1)) * time.Minute)
+	}
+	t := time.Date(now.Year(), now.Month(), now.Day(), c.StartHour, 0, 0, 0, now.Location())
+	for !t.After(now) || (c.WeekdaysOnly && (t.Weekday() == time.Saturday || t.Weekday() == time.Sunday)) {
+		t = time.Date(t.Year(), t.Month(), t.Day()+1, c.StartHour, 0, 0, 0, t.Location())
+	}
+	return t
+}
+
 // Nudge interval limits. The max stays under the Teams idle timeout (about 5 minutes; Slack is about 10).
 const (
 	MinIntervalSec = 5
@@ -72,6 +90,7 @@ type State string
 const (
 	Active State = "active"
 	Paused State = "paused (outside work hours)"
+	Held   State = "paused (by you)"
 )
 
 // Run nudges the mouse every interval until ctx ends.
@@ -93,8 +112,11 @@ func Run(ctx context.Context, c Config, onState func(State, error)) error {
 	defer tick.Stop()
 	var last State
 	for {
+		now := time.Now()
 		state := Active
-		if c.Schedule && !c.InHours(time.Now()) {
+		if now.UnixMilli() < c.PausedUntil { // wall clock, so a pause also ends across laptop sleep
+			state = Held
+		} else if c.Schedule && !c.InHours(now) {
 			state = Paused
 		}
 		if state != last {

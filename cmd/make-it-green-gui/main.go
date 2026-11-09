@@ -69,6 +69,7 @@ func (a *App) GreenSince() int64 {
 // Start saves c and runs the engine with it. It restarts a running engine
 // and keeps the green time, so a settings change does not reset the counter.
 func (a *App) Start(c engine.Config) error {
+	c.Stopped = false
 	if err := c.Save(); err != nil {
 		return err
 	}
@@ -100,7 +101,24 @@ func (a *App) Start(c engine.Config) error {
 	return nil
 }
 
+// Pause runs the engine paused until c.ResumeAt and returns the saved config.
+func (a *App) Pause(c engine.Config) (engine.Config, error) {
+	c.PausedUntil = c.ResumeAt(time.Now()).UnixMilli()
+	return c, a.Start(c)
+}
+
+// Resume ends a pause, or starts a stopped engine.
+func (a *App) Resume(c engine.Config) (engine.Config, error) {
+	c.PausedUntil = 0
+	return c, a.Start(c)
+}
+
+// Stop turns the engine off and remembers it, so autostart does not start it at the next login.
 func (a *App) Stop() {
+	if c, err := engine.LoadConfig(); err == nil {
+		c.Stopped, c.PausedUntil = true, 0
+		c.Save()
+	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if a.stop != nil {
@@ -155,9 +173,9 @@ func main() {
 	frontend, _ := fs.Sub(assets, "frontend")
 	err := wails.Run(&options.App{
 		Title:            "Make It Green",
-		Width:            780,
-		Height:           540,
-		MinWidth:         360,
+		Width:            380,
+		Height:           560,
+		MinWidth:         340,
 		MinHeight:        480,
 		AssetServer:      &assetserver.Options{Assets: frontend},
 		BackgroundColour: &options.RGBA{R: 15, G: 17, B: 16, A: 1},
@@ -172,7 +190,7 @@ func main() {
 			app.ctx = ctx
 			app.startTray()
 			// Autostart launches the app with no args, so it starts working right away.
-			if c, err := engine.LoadConfig(); err == nil && engine.AutostartEnabled() {
+			if c, err := engine.LoadConfig(); err == nil && engine.AutostartEnabled() && !c.Stopped {
 				app.Start(c)
 			}
 		},
